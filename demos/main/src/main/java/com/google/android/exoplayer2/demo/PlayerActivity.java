@@ -353,10 +353,7 @@ public class PlayerActivity extends AppCompatActivity
     if (player == null) {
       Intent intent = getIntent();
 
-      mediaSource = createTopLevelMediaSource(intent);
-      if (mediaSource == null) {
-        return;
-      }
+
 
       TrackSelection.Factory trackSelectionFactory;
       String abrAlgorithm = intent.getStringExtra(ABR_ALGORITHM_EXTRA);
@@ -377,6 +374,10 @@ public class PlayerActivity extends AppCompatActivity
 
       trackSelector = new DefaultTrackSelector(/* context= */ this, trackSelectionFactory);
       trackSelector.setParameters(trackSelectorParameters);
+      mediaSource = createTopLevelMediaSource(intent);
+      if (mediaSource == null) {
+        return;
+      }
       lastSeenTrackGroupArray = null;
 
       player =
@@ -590,7 +591,7 @@ public class PlayerActivity extends AppCompatActivity
         pkExternalSubtitle.getLanguage()); // The subtitle language. May be null.
 
     return new SingleSampleMediaSource.Factory(new DefaultDataSourceFactory(this, ((DemoApplication) getApplication()).buildHttpDataSourceFactory()))
-        //.setLoadErrorHandlingPolicy(new CustomTextLoadErrorHandlingPolicy())
+        .setLoadErrorHandlingPolicy(new CustomTextLoadErrorHandlingPolicy(trackSelector))
         .createMediaSource(Uri.parse(pkExternalSubtitle.getUrl()), subtitleFormat, C.TIME_UNSET);
   }
 
