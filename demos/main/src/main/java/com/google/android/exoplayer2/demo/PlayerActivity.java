@@ -75,6 +75,7 @@ import com.google.android.exoplayer2.ui.PlayerControlView;
 import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.ui.spherical.SphericalGLSurfaceView;
 import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.util.ErrorMessageProvider;
 import com.google.android.exoplayer2.util.EventLogger;
@@ -83,6 +84,8 @@ import java.lang.reflect.Constructor;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.util.ArrayList;
+import java.util.List;
 
 /** An activity that plays media using {@link SimpleExoPlayer}. */
 public class PlayerActivity extends AppCompatActivity
@@ -518,9 +521,29 @@ public class PlayerActivity extends AppCompatActivity
     @ContentType int type = Util.inferContentType(uri, extension);
     switch (type) {
       case C.TYPE_DASH:
-        return new DashMediaSource.Factory(dataSourceFactory)
-            .setDrmSessionManager(drmSessionManager)
-            .createMediaSource(uri);
+//        return new DashMediaSource.Factory(dataSourceFactory)
+//            .setDrmSessionManager(drmSessionManager)
+//            .createMediaSource(uri);
+
+      List<PKExternalSubtitle> externalSubtitleList = new ArrayList<>();
+
+      PKExternalSubtitle pkExternalSubtitle = new PKExternalSubtitle()
+          .setUrl("https://zee5vod.akamaized.net/drm1/elemental/dash/ON_AIR/DOMESTIC/1AND_TV/July2020/16072020/Seamless/Bhabi_Ji_Ghar_Par_Hai_Ep1330_Seamless_16072020_hi_7591039661bcc3c409312ec3e844274e/manifest-en.vtt")
+          .setMimeType(PKExternalSubtitle.PKSubtitleFormat.vtt)
+          .setLabel("External_Deutsch")
+          .setLanguage("deu");
+      externalSubtitleList.add(pkExternalSubtitle);
+
+      PKExternalSubtitle pkExternalSubtitleDe = new PKExternalSubtitle()
+          .setUrl("https://mkvtoolnix.download/samples/vsshort-en.srt")
+          .setMimeType(PKExternalSubtitle.PKSubtitleFormat.srt)
+          .setLabel("External_English")
+          .setLanguage("eng");
+      externalSubtitleList.add(pkExternalSubtitleDe);
+
+      return new MergingMediaSource(buildMediaSourceList(new DashMediaSource.Factory(dataSourceFactory)
+          .setDrmSessionManager(drmSessionManager)
+          .createMediaSource(uri), externalSubtitleList));
       case C.TYPE_SS:
         return new SsMediaSource.Factory(dataSourceFactory)
             .setDrmSessionManager(drmSessionManager)
@@ -537,6 +560,41 @@ public class PlayerActivity extends AppCompatActivity
         throw new IllegalStateException("Unsupported type: " + type);
     }
   }
+
+  private MediaSource[] buildMediaSourceList(MediaSource mediaSource, List<PKExternalSubtitle> externalSubtitleList) {
+    List<MediaSource> streamMediaSources = new ArrayList<>();
+
+    if (externalSubtitleList != null && externalSubtitleList.size() > 0) {
+      for (int subtitlePosition = 0 ; subtitlePosition < externalSubtitleList.size() ; subtitlePosition ++) {
+        MediaSource subtitleMediaSource = buildExternalSubtitleSource(subtitlePosition, externalSubtitleList.get(subtitlePosition));
+        streamMediaSources.add(subtitleMediaSource);
+      }
+    }
+
+    // 0th position is secured for dash/hls/extractor media source
+    streamMediaSources.add(0, mediaSource);
+    return streamMediaSources.toArray(new MediaSource[0]);
+  }
+
+  private MediaSource buildExternalSubtitleSource(int subtitleId, PKExternalSubtitle pkExternalSubtitle) {
+    // Build the subtitle MediaSource.
+    Format subtitleFormat = Format.createTextContainerFormat(
+        String.valueOf(subtitleId), // An identifier for the track. May be null.
+        pkExternalSubtitle.getLabel(),
+        pkExternalSubtitle.getContainerMimeType(),
+        pkExternalSubtitle.getMimeType(), // The mime type. Must be set correctly.
+        pkExternalSubtitle.getCodecs(),
+        pkExternalSubtitle.getBitrate(),
+        pkExternalSubtitle.getSelectionFlags(),
+        pkExternalSubtitle.getRoleFlag(),
+        pkExternalSubtitle.getLanguage()); // The subtitle language. May be null.
+
+    return new SingleSampleMediaSource.Factory(new DefaultDataSourceFactory(this, ((DemoApplication) getApplication()).buildHttpDataSourceFactory()))
+        //.setLoadErrorHandlingPolicy(new CustomTextLoadErrorHandlingPolicy())
+        .createMediaSource(Uri.parse(pkExternalSubtitle.getUrl()), subtitleFormat, C.TIME_UNSET);
+  }
+
+
 
   private HttpMediaDrmCallback createMediaDrmCallback(
       String licenseUrl, String[] keyRequestPropertiesArray) {
