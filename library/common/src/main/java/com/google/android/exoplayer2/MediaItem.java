@@ -667,6 +667,8 @@ public final class MediaItem {
     public final String mimeType;
     /** The language. */
     @Nullable public final String language;
+    /** The label. */
+    @Nullable public final String label;
     /** The selection flags. */
     @C.SelectionFlags public final int selectionFlags;
 
@@ -677,8 +679,8 @@ public final class MediaItem {
      * @param mimeType The MIME type.
      * @param language The optional language.
      */
-    public Subtitle(Uri uri, String mimeType, @Nullable String language) {
-      this(uri, mimeType, language, /* selectionFlags= */ 0);
+    public Subtitle(Uri uri, String mimeType, @Nullable String language, @Nullable String label) {
+      this(uri, mimeType, language, label, /* selectionFlags= */ 0);
     }
 
     /**
@@ -690,10 +692,11 @@ public final class MediaItem {
      * @param selectionFlags The selection flags.
      */
     public Subtitle(
-        Uri uri, String mimeType, @Nullable String language, @C.SelectionFlags int selectionFlags) {
+        Uri uri, String mimeType, @Nullable String language, @Nullable String label, @C.SelectionFlags int selectionFlags) {
       this.uri = uri;
       this.mimeType = mimeType;
       this.language = language;
+      this.label = label;
       this.selectionFlags = selectionFlags;
     }
 
@@ -711,6 +714,7 @@ public final class MediaItem {
       return uri.equals(other.uri)
           && mimeType.equals(other.mimeType)
           && Util.areEqual(language, other.language)
+          && Util.areEqual(label, other.label)
           && selectionFlags == other.selectionFlags;
     }
 
@@ -719,6 +723,7 @@ public final class MediaItem {
       int result = uri.hashCode();
       result = 31 * result + mimeType.hashCode();
       result = 31 * result + (language == null ? 0 : language.hashCode());
+      result = 31 * result + (label == null ? 0 : label.hashCode());
       result = 31 * result + selectionFlags;
       return result;
     }

@@ -175,7 +175,7 @@ public final class SingleSampleMediaSource extends BaseMediaSource {
       return new SingleSampleMediaSource(
           format.id == null ? trackId : format.id,
           new MediaItem.Subtitle(
-              uri, checkNotNull(format.sampleMimeType), format.language, format.selectionFlags),
+              uri, checkNotNull(format.sampleMimeType), format.language, format.label, format.selectionFlags),
           dataSourceFactory,
           durationUs,
           loadErrorHandlingPolicy,
@@ -245,7 +245,7 @@ public final class SingleSampleMediaSource extends BaseMediaSource {
     this(
         /* trackId= */ null,
         new MediaItem.Subtitle(
-            uri, checkNotNull(format.sampleMimeType), format.language, format.selectionFlags),
+            uri, checkNotNull(format.sampleMimeType), format.language, format.label, format.selectionFlags),
         dataSourceFactory,
         durationUs,
         new DefaultLoadErrorHandlingPolicy(minLoadableRetryCount),
@@ -279,6 +279,7 @@ public final class SingleSampleMediaSource extends BaseMediaSource {
         new Format.Builder()
             .setId(trackId)
             .setSampleMimeType(subtitle.mimeType)
+            .setLabel(subtitle.label)
             .setLanguage(subtitle.language)
             .setSelectionFlags(subtitle.selectionFlags)
             .build();
