@@ -768,7 +768,7 @@ public class DashManifestParser extends DefaultHandler
       sampleMimeType = parseEac3SupplementalProperties(supplementalProperties);
     }
     Format.FormatThumbnailInfo formatThumbnailInfo = null;
-    if ("image/jpeg".equals(containerMimeType) || "image/png".equals(containerMimeType)) {
+    if (MimeTypes.isImage(containerMimeType)) { //"image/jpeg".equals(containerMimeType) || "image/png".equals(containerMimeType)) {
       //sampleMimeType = parseEac3SupplementalProperties(supplementalProperties);
       formatThumbnailInfo = buildFormatThumbnailInfo(baseURL, id, bitrate , segmentBase, essentialProperties);
     }
@@ -789,7 +789,7 @@ public class DashManifestParser extends DefaultHandler
             .setRoleFlags(roleFlags)
             .setLanguage(language);
 
-    if (MimeTypes.isImage(sampleMimeType)) { //"image/jpeg".equals(containerMimeType) || "image/png".equals(containerMimeType)) {
+    if (MimeTypes.isImage(containerMimeType)) { //"image/jpeg".equals(containerMimeType) || "image/png".equals(containerMimeType)) {
       formatBuilder.setFormatThumbnailInfo(formatThumbnailInfo);
       formatBuilder.setWidth(width).setHeight(height);
     }
