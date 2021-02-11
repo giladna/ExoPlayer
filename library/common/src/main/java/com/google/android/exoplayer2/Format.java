@@ -129,7 +129,7 @@ public final class Format implements Parcelable {
     private int peakBitrate;
     @Nullable private String codecs;
     @Nullable private Metadata metadata;
-
+    @Nullable FormatThumbnailInfo formatThumbnailInfo;
     // Container specific.
 
     @Nullable private String containerMimeType;
@@ -242,6 +242,11 @@ public final class Format implements Parcelable {
      */
     public Builder setId(@Nullable String id) {
       this.id = id;
+      return this;
+    }
+
+    public Builder setFormatThumbnailInfo(@Nullable FormatThumbnailInfo formatThumbnailInfo) {
+      this.formatThumbnailInfo = formatThumbnailInfo;
       return this;
     }
 
@@ -665,7 +670,7 @@ public final class Format implements Parcelable {
   @Nullable public final String codecs;
   /** Metadata, or null if unknown or not applicable. */
   @Nullable public final Metadata metadata;
-
+  @Nullable public final FormatThumbnailInfo formatThumbnailInfo;
   // Container specific.
 
   /** The mime type of the container, or null if unknown or not applicable. */
@@ -777,6 +782,7 @@ public final class Format implements Parcelable {
       @Nullable String sampleMimeType,
       @Nullable String codecs,
       @Nullable Metadata metadata,
+      @Nullable FormatThumbnailInfo formatThumbnailInfo,
       int bitrate,
       int width,
       int height,
@@ -793,6 +799,7 @@ public final class Format implements Parcelable {
         .setPeakBitrate(bitrate)
         .setCodecs(codecs)
         .setMetadata(metadata)
+        .setFormatThumbnailInfo(formatThumbnailInfo)
         .setContainerMimeType(containerMimeType)
         .setSampleMimeType(sampleMimeType)
         .setInitializationData(initializationData)
@@ -1192,6 +1199,7 @@ public final class Format implements Parcelable {
     bitrate = peakBitrate != NO_VALUE ? peakBitrate : averageBitrate;
     codecs = builder.codecs;
     metadata = builder.metadata;
+    formatThumbnailInfo = builder.formatThumbnailInfo;
     // Container specific.
     containerMimeType = builder.containerMimeType;
     // Sample specific.
@@ -1241,6 +1249,7 @@ public final class Format implements Parcelable {
     bitrate = peakBitrate != NO_VALUE ? peakBitrate : averageBitrate;
     codecs = in.readString();
     metadata = in.readParcelable(Metadata.class.getClassLoader());
+    formatThumbnailInfo = in.readParcelable(FormatThumbnailInfo.class.getClassLoader());
     // Container specific.
     containerMimeType = in.readString();
     // Sample specific.
@@ -1626,6 +1635,7 @@ public final class Format implements Parcelable {
     dest.writeInt(peakBitrate);
     dest.writeString(codecs);
     dest.writeParcelable(metadata, 0);
+    dest.writeParcelable(formatThumbnailInfo, 0);
     // Container specific.
     dest.writeString(containerMimeType);
     // Sample specific.
@@ -1673,4 +1683,132 @@ public final class Format implements Parcelable {
     }
 
   };
+
+  public static class FormatThumbnailInfo implements Parcelable {
+    public String structure;
+    public int tilesHorizontal;
+    public int tilesVertical;
+    public long presentationTimeOffset;
+    public long timeScale;
+    public long startNumber;
+    public long endNumber;
+    public String imageTemplateUrl;
+    public long segmentDuration;
+
+    FormatThumbnailInfo(Parcel in) {
+      structure = in.readString();
+      tilesHorizontal = in.readInt();
+      tilesVertical = in.readInt();
+      presentationTimeOffset = in.readLong();
+      timeScale = in.readLong();
+      startNumber = in.readLong();
+      endNumber = in.readLong();
+      imageTemplateUrl = in.readString();
+      segmentDuration = in.readLong();
+    }
+
+    private FormatThumbnailInfo(Builder builder) {
+      structure = builder.structure;
+      tilesHorizontal = builder.tilesHorizontal;
+      tilesVertical = builder.tilesVertical;
+      presentationTimeOffset = builder.presentationTimeOffset;
+      timeScale = builder.timeScale;
+      startNumber = builder.startNumber;
+      endNumber = builder.endNumber;
+      imageTemplateUrl = builder.imageTemplateUrl;
+      segmentDuration = builder.segmentDuration;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+      dest.writeString(structure);
+      dest.writeInt(tilesHorizontal);
+      dest.writeInt(tilesVertical);
+      dest.writeLong(presentationTimeOffset);
+      dest.writeLong(timeScale);
+      dest.writeLong(startNumber);
+      dest.writeLong(endNumber);
+      dest.writeString(imageTemplateUrl);
+      dest.writeLong(segmentDuration);
+    }
+
+    @Override
+    public int describeContents() {
+      return 0;
+    }
+
+    public static final Creator<FormatThumbnailInfo> CREATOR = new Creator<FormatThumbnailInfo>() {
+      @Override
+      public FormatThumbnailInfo createFromParcel(Parcel in) {
+        return new FormatThumbnailInfo(in);
+      }
+
+      @Override
+      public FormatThumbnailInfo[] newArray(int size) {
+        return new FormatThumbnailInfo[size];
+      }
+    };
+
+    public static class Builder {
+
+      private String structure;
+      private int tilesHorizontal;
+      private int tilesVertical;
+      private long presentationTimeOffset;
+      private long timeScale;
+      private long startNumber;
+      private long endNumber;
+      private String imageTemplateUrl;
+      private long segmentDuration;
+
+      public FormatThumbnailInfo.Builder setStructure(String structure) {
+        this.structure = structure;
+        return this;
+      }
+
+      public FormatThumbnailInfo.Builder setTilesHorizontal(int tilesHorizontal) {
+        this.tilesHorizontal = tilesHorizontal;
+        return this;
+      }
+
+      public FormatThumbnailInfo.Builder setTilesVertical(int tilesVertical) {
+        this.tilesVertical = tilesVertical;
+        return this;
+      }
+
+      public FormatThumbnailInfo.Builder setPresentationTimeOffset(long presentationTimeOffset) {
+        this.presentationTimeOffset = presentationTimeOffset;
+        return this;
+      }
+
+      public FormatThumbnailInfo.Builder setTimeScale(long timeScale) {
+        this.timeScale = timeScale;
+        return this;
+      }
+
+      public FormatThumbnailInfo.Builder setStartNumber(long startNumber) {
+        this.startNumber = startNumber;
+        return this;
+      }
+
+      public FormatThumbnailInfo.Builder  setEndNumber(long endNumber) {
+        this.endNumber = endNumber;
+        return this;
+      }
+
+      public FormatThumbnailInfo.Builder  setImageTemplateUrl(String imageTemplateUrl) {
+        this.imageTemplateUrl = imageTemplateUrl;
+        return this;
+      }
+
+      public FormatThumbnailInfo.Builder  setSegmentDuration(long segmentDuration) {
+        this.segmentDuration = segmentDuration;
+        return this;
+      }
+
+      public FormatThumbnailInfo build() {
+        return new FormatThumbnailInfo(this);
+      }
+    }
+  }
 }

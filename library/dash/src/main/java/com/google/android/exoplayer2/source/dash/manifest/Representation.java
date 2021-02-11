@@ -302,6 +302,10 @@ public abstract class Representation {
       this.segmentBase = segmentBase;
     }
 
+    public MultiSegmentBase getSegmentBase() {
+      return segmentBase;
+    }
+
     @Override
     @Nullable
     public RangedUri getIndexUri() {

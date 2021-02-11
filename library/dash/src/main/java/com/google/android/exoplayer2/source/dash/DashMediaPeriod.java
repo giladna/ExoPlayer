@@ -666,6 +666,10 @@ import org.checkerframework.checker.nullness.compatqual.NullableType;
         Format format = representations.get(j).format;
         formats[j] =
             format.copyWithExoMediaCryptoType(drmSessionManager.getExoMediaCryptoType(format));
+        if("image/jpeg".equals(format.containerMimeType) || "image/png".equals(format.containerMimeType)) {
+          formats[j] = formats[j].buildUpon().setFormatThumbnailInfo(format.formatThumbnailInfo)
+              .build();
+        }
       }
 
       AdaptationSet firstAdaptationSet = adaptationSets.get(adaptationSetIndices[0]);

@@ -69,6 +69,22 @@ public abstract class SegmentBase {
   }
 
   /**
+   * Returns the presentation time offset.
+   */
+  public long getPresentationTimeOffset() {
+    return presentationTimeOffset;
+  }
+
+  /**
+   * Returns the timscale.
+   */
+  public long getTimescale() {
+    return timescale;
+  }
+
+
+
+  /**
    * A {@link SegmentBase} that defines a single segment.
    */
   public static class SingleSegmentBase extends SegmentBase {
@@ -170,6 +186,31 @@ public abstract class SegmentBase {
       this.availabilityTimeOffsetUs = availabilityTimeOffsetUs;
       this.timeShiftBufferDepthUs = timeShiftBufferDepthUs;
       this.periodStartUnixTimeUs = periodStartUnixTimeUs;
+    }
+
+    public long getStartNumber() {
+      return startNumber;
+    }
+
+    public long getDuration() {
+      return duration;
+    }
+
+    @Nullable
+    public List<SegmentTimelineElement> getSegmentTimeline() {
+      return segmentTimeline;
+    }
+
+    public long getTimeShiftBufferDepthUs() {
+      return timeShiftBufferDepthUs;
+    }
+
+    public long getPeriodStartUnixTimeUs() {
+      return periodStartUnixTimeUs;
+    }
+
+    public long getAvailabilityTimeOffsetUs() {
+      return availabilityTimeOffsetUs;
     }
 
     /** See {@link DashSegmentIndex#getSegmentNum(long, long)}. */
@@ -427,6 +468,20 @@ public abstract class SegmentBase {
       this.initializationTemplate = initializationTemplate;
       this.mediaTemplate = mediaTemplate;
       this.endNumber = endNumber;
+    }
+
+    @Nullable
+    public UrlTemplate getInitializationTemplate() {
+      return initializationTemplate;
+    }
+
+    @Nullable
+    public UrlTemplate getMediaTemplate() {
+      return mediaTemplate;
+    }
+
+    public long getEndNumber() {
+      return endNumber;
     }
 
     @Override

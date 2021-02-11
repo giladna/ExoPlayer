@@ -373,6 +373,10 @@ public class DashManifestParser extends DefaultHandler
     int contentType = parseContentType(xpp);
 
     String mimeType = xpp.getAttributeValue(null, "mimeType");
+
+    if (contentType == -1 && ("image/jpeg".equals(mimeType) || "image/png".equals(mimeType))) {
+      contentType = C.TRACK_TYPE_IMAGE;
+    }
     String codecs = xpp.getAttributeValue(null, "codecs");
     int width = parseInt(xpp, "width", Format.NO_VALUE);
     int height = parseInt(xpp, "height", Format.NO_VALUE);
@@ -527,7 +531,8 @@ public class DashManifestParser extends DefaultHandler
         : MimeTypes.BASE_TYPE_AUDIO.equals(contentType) ? C.TRACK_TYPE_AUDIO
             : MimeTypes.BASE_TYPE_VIDEO.equals(contentType) ? C.TRACK_TYPE_VIDEO
                 : MimeTypes.BASE_TYPE_TEXT.equals(contentType) ? C.TRACK_TYPE_TEXT
-                    : C.TRACK_TYPE_UNKNOWN;
+                    : MimeTypes.BASE_TYPE_IMAGE.equals(contentType) ? C.TRACK_TYPE_IMAGE
+                        : C.TRACK_TYPE_UNKNOWN;
   }
 
   /**
@@ -645,6 +650,7 @@ public class DashManifestParser extends DefaultHandler
     int bandwidth = parseInt(xpp, "bandwidth", Format.NO_VALUE);
 
     String mimeType = parseString(xpp, "mimeType", adaptationSetMimeType);
+
     String codecs = parseString(xpp, "codecs", adaptationSetCodecs);
     int width = parseInt(xpp, "width", adaptationSetWidth);
     int height = parseInt(xpp, "height", adaptationSetHeight);
@@ -731,12 +737,14 @@ public class DashManifestParser extends DefaultHandler
             adaptationSetAccessibilityDescriptors,
             codecs,
             essentialProperties,
-            supplementalProperties);
+            supplementalProperties,
+            segmentBase,
+            baseUrl);
+
     segmentBase = segmentBase != null ? segmentBase : new SingleSegmentBase();
 
     return new RepresentationInfo(format, baseUrl, segmentBase, drmSchemeType, drmSchemeDatas,
-        inbandEventStreams, Representation.REVISION_ID_DEFAULT);
-  }
+        inbandEventStreams, Representation.REVISION_ID_DEFAULT);  }
 
   protected Format buildFormat(
       @Nullable String id,
@@ -752,10 +760,17 @@ public class DashManifestParser extends DefaultHandler
       List<Descriptor> accessibilityDescriptors,
       @Nullable String codecs,
       List<Descriptor> essentialProperties,
-      List<Descriptor> supplementalProperties) {
+      List<Descriptor> supplementalProperties,
+      SegmentBase segmentBase,
+      String baseURL) {
     @Nullable String sampleMimeType = getSampleMimeType(containerMimeType, codecs);
     if (MimeTypes.AUDIO_E_AC3.equals(sampleMimeType)) {
       sampleMimeType = parseEac3SupplementalProperties(supplementalProperties);
+    }
+    Format.FormatThumbnailInfo formatThumbnailInfo = null;
+    if ("image/jpeg".equals(containerMimeType) || "image/png".equals(containerMimeType)) {
+      //sampleMimeType = parseEac3SupplementalProperties(supplementalProperties);
+      formatThumbnailInfo = buildFormatThumbnailInfo(baseURL, id, bitrate , segmentBase, essentialProperties);
     }
     @C.SelectionFlags int selectionFlags = parseSelectionFlagsFromRoleDescriptors(roleDescriptors);
     @C.RoleFlags int roleFlags = parseRoleFlagsFromRoleDescriptors(roleDescriptors);
@@ -773,6 +788,11 @@ public class DashManifestParser extends DefaultHandler
             .setSelectionFlags(selectionFlags)
             .setRoleFlags(roleFlags)
             .setLanguage(language);
+
+    if (MimeTypes.isImage(sampleMimeType)) { //"image/jpeg".equals(containerMimeType) || "image/png".equals(containerMimeType)) {
+      formatBuilder.setFormatThumbnailInfo(formatThumbnailInfo);
+      formatBuilder.setWidth(width).setHeight(height);
+    }
 
     if (MimeTypes.isVideo(sampleMimeType)) {
       formatBuilder.setWidth(width).setHeight(height).setFrameRate(frameRate);
@@ -801,6 +821,14 @@ public class DashManifestParser extends DefaultHandler
     if (label != null) {
       formatBuilder.setLabel(label);
     }
+    if (MimeTypes.isImage(representationInfo.format.containerMimeType)) { //"image/jpeg".equals(representationInfo.format.containerMimeType) || "image/png".equals(representationInfo.format.containerMimeType)) {
+      if (representationInfo.format.formatThumbnailInfo == null) {
+        formatBuilder.setFormatThumbnailInfo(buildFormatThumbnailInfo(representationInfo.baseUrl, representationInfo.format.id, representationInfo.format.bitrate, representationInfo.segmentBase, null));
+      } else {
+        formatBuilder.setFormatThumbnailInfo(representationInfo.format.formatThumbnailInfo);
+      }
+    }
+
     @Nullable String drmSchemeType = representationInfo.drmSchemeType;
     if (drmSchemeType == null) {
       drmSchemeType = extraDrmSchemeType;
@@ -819,6 +847,48 @@ public class DashManifestParser extends DefaultHandler
         representationInfo.baseUrl,
         representationInfo.segmentBase,
         inbandEventStreams);
+  }
+
+  private Format.FormatThumbnailInfo buildFormatThumbnailInfo(String baseURL, String id, int bitrate, SegmentBase segmentBase, List<Descriptor> essentialProperties) {
+    Format.FormatThumbnailInfo.Builder thumbnailInfoBuilder = new Format.FormatThumbnailInfo.Builder();
+    String structure = "";
+    int tilesHorizontal = 1;
+    int tilesVertical = 1;
+
+    if (essentialProperties != null && essentialProperties.size() == 1) {
+      structure = essentialProperties.get(0).value;
+      if (!TextUtils.isEmpty(structure) && structure.contains("x")) {
+        String[] structureContent = structure.split("x");
+        if (TextUtils.isDigitsOnly(structureContent[0]) && TextUtils.isDigitsOnly(structureContent[1])) {
+          tilesHorizontal = Integer.parseInt(structureContent[0]);
+          tilesVertical = Integer.parseInt(structureContent[1]);
+        }
+      }
+    }
+    long presentationTimeOffset = ((SegmentBase.SegmentTemplate)segmentBase).presentationTimeOffset;
+    long timeScale = ((SegmentTemplate)segmentBase).timescale;
+    long startNumber = ((SegmentTemplate)segmentBase).startNumber;
+    long endNumber = ((SegmentTemplate)segmentBase).endNumber;
+    UrlTemplate urlTemplate = ((SegmentTemplate)segmentBase).initializationTemplate;
+    if (urlTemplate == null) {
+      urlTemplate = ((SegmentTemplate)segmentBase).mediaTemplate;
+    }
+    String imageTemplateUrl = "";
+    if (urlTemplate != null) {
+      imageTemplateUrl = baseURL +  urlTemplate.buildUri(id, 900000009, bitrate, 800000008);
+      imageTemplateUrl = imageTemplateUrl.replace("900000009", "$Number$").replace("800000008", "$Time$");
+
+    }
+    thumbnailInfoBuilder.setImageTemplateUrl(imageTemplateUrl);
+    thumbnailInfoBuilder.setSegmentDuration(((SegmentBase.SegmentTemplate)segmentBase).duration);
+    thumbnailInfoBuilder.setStructure(structure);
+    thumbnailInfoBuilder.setTilesHorizontal(tilesHorizontal);
+    thumbnailInfoBuilder.setTilesVertical(tilesVertical);
+    thumbnailInfoBuilder.setPresentationTimeOffset(presentationTimeOffset);
+    thumbnailInfoBuilder.setTimeScale(timeScale);
+    thumbnailInfoBuilder.setStartNumber(startNumber);
+    thumbnailInfoBuilder.setEndNumber(endNumber);
+    return thumbnailInfoBuilder.build();
   }
 
   // SegmentBase, SegmentList and SegmentTemplate parsing.
@@ -1735,12 +1805,24 @@ public class DashManifestParser extends DefaultHandler
 
   protected static int parseInt(XmlPullParser xpp, String name, int defaultValue) {
     String value = xpp.getAttributeValue(null, name);
-    return value == null ? defaultValue : Integer.parseInt(value);
+    if (value == null || !TextUtils.isDigitsOnly(value)) {
+      return defaultValue;
+    }
+    return Integer.parseInt(value);
   }
 
   protected static long parseLong(XmlPullParser xpp, String name, long defaultValue) {
     String value = xpp.getAttributeValue(null, name);
-    return value == null ? defaultValue : Long.parseLong(value);
+    boolean increase = false;
+    if (value !=null && value.contains(".")) {
+      value = value.split("\\.")[0];
+      increase = true;
+    }
+    long longValue = (value == null) ? defaultValue : Long.parseLong(value);
+    if (increase) {
+      return longValue + 1;
+    }
+    return longValue;
   }
 
   protected static float parseFloat(XmlPullParser xpp, String name, float defaultValue) {
