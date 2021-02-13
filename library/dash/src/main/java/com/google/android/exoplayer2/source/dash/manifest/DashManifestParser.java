@@ -768,8 +768,7 @@ public class DashManifestParser extends DefaultHandler
       sampleMimeType = parseEac3SupplementalProperties(supplementalProperties);
     }
     Format.FormatThumbnailInfo formatThumbnailInfo = null;
-    if (MimeTypes.isImage(containerMimeType)) { //"image/jpeg".equals(containerMimeType) || "image/png".equals(containerMimeType)) {
-      //sampleMimeType = parseEac3SupplementalProperties(supplementalProperties);
+    if (MimeTypes.isImage(containerMimeType)) {
       formatThumbnailInfo = buildFormatThumbnailInfo(baseURL, id, bitrate , segmentBase, essentialProperties);
     }
     @C.SelectionFlags int selectionFlags = parseSelectionFlagsFromRoleDescriptors(roleDescriptors);
@@ -789,7 +788,7 @@ public class DashManifestParser extends DefaultHandler
             .setRoleFlags(roleFlags)
             .setLanguage(language);
 
-    if (MimeTypes.isImage(containerMimeType)) { //"image/jpeg".equals(containerMimeType) || "image/png".equals(containerMimeType)) {
+    if (MimeTypes.isImage(containerMimeType)) {
       formatBuilder.setFormatThumbnailInfo(formatThumbnailInfo);
       formatBuilder.setWidth(width).setHeight(height);
     }
@@ -821,7 +820,7 @@ public class DashManifestParser extends DefaultHandler
     if (label != null) {
       formatBuilder.setLabel(label);
     }
-    if (MimeTypes.isImage(representationInfo.format.containerMimeType)) { //"image/jpeg".equals(representationInfo.format.containerMimeType) || "image/png".equals(representationInfo.format.containerMimeType)) {
+    if (MimeTypes.isImage(representationInfo.format.containerMimeType)) {
       if (representationInfo.format.formatThumbnailInfo == null) {
         formatBuilder.setFormatThumbnailInfo(buildFormatThumbnailInfo(representationInfo.baseUrl, representationInfo.format.id, representationInfo.format.bitrate, representationInfo.segmentBase, null));
       } else {
